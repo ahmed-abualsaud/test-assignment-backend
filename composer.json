@@ -1,0 +1,19 @@
+{
+    "name": "ahmed/product",
+    "description": "product test assignment",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ahmed Abu Al-Saud"
+        }
+    ],
+    "require": {
+        "psr/container": "^1.0"
+    }
+}
