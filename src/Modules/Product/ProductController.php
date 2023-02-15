@@ -2,14 +2,16 @@
 
 namespace App\Modules\Product;
 
+use App\Modules\Product\DTO\CreateProductDTO;
+
 class ProductController {
-    public function list()
+    public function list(CreateProductDTO $args)
     {
-        return "Products";
+        return json_encode($args);
     }
 
-    public function create()
+    public function create(CreateProductDTO $args)
     {
-        return "Create";
+        return json_encode($args); 
     }
 }

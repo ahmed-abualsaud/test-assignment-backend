@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Setup;
 
 use ReflectionClass;
 use ReflectionParameter;
@@ -13,7 +13,7 @@ class Container implements ContainerInterface
 {
     private $entries = [];
 
-    public function get(string $id)
+    public function get($id)
     {
         if($this->has($id)) {
 
@@ -29,7 +29,7 @@ class Container implements ContainerInterface
         return $this->resolve($id);        
     }
 
-    public function has(string $id) 
+    public function has($id) 
     {
         return isset($this->entries[$id]);
     }
