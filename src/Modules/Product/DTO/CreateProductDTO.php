@@ -6,12 +6,30 @@ use App\Setup\DTO;
 
 class CreateProductDTO extends DTO
 {
-    #Rules(required, string)
+    #Rules[required, string]
     public $sku;
 
-    #Rules(required, string)
+    #Rules[required, string]
     public $name;
 
-    #Rules(required, numeric)
+    #Rules[required, numeric]
     public $price;
+
+    #Rules[required, string]
+    public $type;
+
+    #Rules[required_when(type=DVD-disc), numeric]
+    public $size;
+
+    #Rules[required_when(type=Book), numeric]
+    public $weight;
+
+    #Rules[required_when(type=Furniture), numeric]
+    public $height;
+
+    #Rules[required_when(type=Furniture), numeric]
+    public $width;
+
+    #Rules[required_when(type=Furniture), numeric]
+    public $length;
 }

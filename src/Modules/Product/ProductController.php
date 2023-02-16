@@ -5,13 +5,27 @@ namespace App\Modules\Product;
 use App\Modules\Product\DTO\CreateProductDTO;
 
 class ProductController {
-    public function list(CreateProductDTO $args)
+
+    protected $productService;
+
+    public function __construct(ProductService $productService) 
     {
-        return json_encode($args);
+        $this->productService = $productService;
+    }
+
+
+    public function list()
+    {
+        return $this->productService->list();
     }
 
     public function create(CreateProductDTO $args)
     {
-        return json_encode($args); 
+        return $this->productService->create($args);
+    }
+
+    public function delete($ids)
+    {
+        return $this->productService->delete($ids);
     }
 }

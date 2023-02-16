@@ -12,7 +12,7 @@ abstract class HTTPResponse
             "success" => false,
             "status" => $status,
             "message" => HTTPMessage::getMessage($status),
-            "error" => $error
+            "error" => $error? $error: null
         ]);
     }
 
@@ -22,7 +22,7 @@ abstract class HTTPResponse
             "success" => true,
             "status" => $status,
             "message" => HTTPMessage::getMessage($status),
-            "data" => $data
+            "data" => $data? $data: null
         ]);
     }
 }

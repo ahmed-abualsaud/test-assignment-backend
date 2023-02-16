@@ -2,7 +2,7 @@
 
 namespace App\Utils;
 
-class HTTPMessage 
+abstract class HTTPMessage 
 {
     private static $http_status_codes = [
         100 => "Continue", 

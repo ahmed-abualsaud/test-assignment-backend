@@ -4,7 +4,6 @@ namespace App\Setup;
 
 use ReflectionClass;
 use ReflectionParameter;
-use ReflectionNamedType;
 use ReflectionUnionType;
 use Psr\Container\ContainerInterface;
 use App\Exceptions\ContainerException;
@@ -73,8 +72,8 @@ class Container implements ContainerInterface
                     throw new ContainerException("Faild to resolve class '".$id."' because of union type for parameter '".$name."'");
                 }
 
-                if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
-                    return $this->get($type->getName());
+                if (! $type->isBuiltin()) {
+                    return $this->get((string) $type);
                 }
 
                 throw new ContainerException("Faild to resolve class '".$id."' because of invalid parameter '".$name."'");

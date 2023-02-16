@@ -19,8 +19,4 @@ ConfigService::load(".env");
 //echo is_subclass_of(new ProductEntity(), Entity::class);
 //print_r((new CreateProductDTO($_POST)));
 
-
-Router::get("/", [\App\Modules\Product\ProductController::class, "list"]);
-Router::post("/create", [\App\Modules\Product\ProductController::class, "create"]);
-
 App::run();

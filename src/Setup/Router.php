@@ -2,8 +2,10 @@
 
 namespace App\Setup;
 
+use Exception;
 use ReflectionObject;
 use App\Setup\Container;
+use App\Utils\HTTPRequest;
 use App\Utils\HTTPResponse;
 use App\Exceptions\RouteNotFoundException;
 
@@ -31,13 +33,23 @@ abstract class Router
         self::$routes["post"][$route] = $action;
     }
 
+    public static function put(string $route, $action)
+    {
+        self::$routes["put"][$route] = $action;
+    }
+
+    public static function delete(string $route, $action)
+    {
+        self::$routes["delete"][$route] = $action;
+    }
+
     public static function resolve(Container $container, string $requestMethod, string $requestUri)
     {
         $route = explode('?', $requestUri)[0];
         $action = self::$routes[$requestMethod][$route]?? null;
 
         if (! $action) {
-            throw new RouteNotFoundException();
+            return HTTPResponse::error(["Route '".$route."' not found"], 404);
         }
 
         if (is_array($action)) {
@@ -45,17 +57,11 @@ abstract class Router
             $method = $action[1];
 
             if (class_exists($class)) {
-                $class = new $class();
+                $class = $container->get($class);
 
                 if (method_exists($class, $method)) {
 
-                    if (strtolower($requestMethod) == "get") {
-                        return self::validateParamsAndCall($container, $class, $method, $_GET);
-                    }
-                    
-                    if (strtolower($requestMethod) == "post") {
-                        return self::validateParamsAndCall($container, $class, $method, $_POST);
-                    }
+                    return self::validateParamsAndCall($container, $class, $method, HTTPRequest::getInputs());
                 }
                 throw new RouteNotFoundException("Method '".$method."' does not exists inside class '".$class."'");
             }
@@ -91,8 +97,20 @@ abstract class Router
                     $dto->$propertyName = $args[$propertyName];
                 }
                 $newParams[$parameter->getName()] = $dto;
-            } else {
-                $newParams[$parameter->getName()] = $args[$parameter->getName()];
+            } 
+            else {
+                $parameterName = $parameter->getName();
+                if (!array_key_exists($parameterName, $args)) {
+                    return HTTPResponse::error(["'".$parameterName."' is required"], 400);
+                }
+
+                try {
+                    $args[$parameterName] = self::convert($parameterClass, $args[$parameterName]);
+                } catch (Exception $e) {
+                    return HTTPResponse::error([$e->getMessage()], 400);
+                }
+
+                $newParams[$parameterName] = $args[$parameterName];
             }
         }
         return HTTPResponse::success(call_user_func_array([$class, $method], $newParams));
@@ -103,17 +121,17 @@ abstract class Router
         $tokens = array_values(array_filter(
             token_get_all(file_get_contents((new ReflectionObject($dto))->getFileName())),
             function(&$token){
-                return (($token[0] == T_COMMENT) && ($token = strstr($token[1], "#Rules("))) || ($token[0] == T_VARIABLE);
+                return (($token[0] == T_COMMENT) && ($token = strstr($token[1], "#Rules["))) || ($token[0] == T_VARIABLE);
             }
         ));
 
         $errors = [];
         $tokenNum = count($tokens);
         for ($i=0; $i < $tokenNum; $i++) { 
-            if (($i + 1) < $tokenNum && $tokens[$i][0] == T_COMMENT && self::string_contains($tokens[$i][1], "#Rules(") && $tokens[($i + 1)][0] == T_VARIABLE) {
+            if (($i + 1) < $tokenNum && $tokens[$i][0] == T_COMMENT && self::string_starts_with($tokens[$i][1], "#Rules[") && $tokens[($i + 1)][0] == T_VARIABLE) {
 
                 $propertyName = ltrim($tokens[($i + 1)][1], "$");
-                $rules = explode(",", substr($tokens[$i][1], 7, strpos($tokens[$i][1], ")") - 7));
+                $rules = explode(",", substr($tokens[$i][1], 7, strpos($tokens[$i][1], "]") - 7));
 
                 foreach($rules as $rule) {
                     $rule = trim($rule);
@@ -135,21 +153,52 @@ abstract class Router
                             $errors[] = "'".$propertyName."' should have a text value";
                         }
                     }
+
+                    if (self::string_starts_with($rule, "required_when")) {
+                        $conditions = substr($rule, 14, strpos($rule, ")") - 14);
+                        $attribute = explode("=", $conditions);
+
+                        if ($args[$attribute[0]] == $attribute[1]) {
+                            if (! array_key_exists($propertyName, $args)) {
+                                $errors[] = "'".$propertyName."' is required";
+                            }
+                        }
+                    }
+
                 }
             }
         }
         return $errors;
     }
 
-    private static function string_contains(string $haystack, string $needle): bool
+    private static function string_starts_with(string $haystack, string $needle): bool
     {
-        if (!function_exists('str_contains')) {
-            if (is_string($haystack) && is_string($needle) ) {
-                return '' === $needle || false !== strpos($haystack, $needle);
-            } else {
-                return false;
-            }
+        if (!function_exists('str_starts_with')) {
+            return (substr($haystack, 0, strlen($needle)) === $needle);
         }
-        return str_contains($haystack, $needle);
+        return str_starts_with($haystack, $needle);
+    }
+
+    private static function convert(string $type, $value)
+    {
+        switch ($type) {
+            case "int":
+                return (int) $value;
+
+            case "float":
+                return (float) $value;
+            
+            case "double":
+                return (double) $value;
+            
+            case "string":
+                return (string) $value;
+
+            case "bool":
+                return (bool) $value;
+            
+            default:
+                return $value;
+        }
     }
 }
