@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Database;
+namespace App\Setup;
 
 use ReflectionClass;
 use ReflectionProperty;

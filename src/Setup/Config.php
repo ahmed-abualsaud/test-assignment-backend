@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Config;
+namespace App\Setup;
 
 use RuntimeException;
 use InvalidArgumentException;
 
-abstract class ConfigService 
+abstract class Config
 {
 
     public static function load(string $path)

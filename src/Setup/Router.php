@@ -4,7 +4,8 @@ namespace App\Setup;
 
 use Exception;
 use ReflectionObject;
-use App\Setup\Container;
+
+use App\Utils\Helper;
 use App\Utils\HTTPRequest;
 use App\Utils\HTTPResponse;
 use App\Exceptions\RouteNotFoundException;
@@ -94,7 +95,11 @@ abstract class Router
 
                 foreach($properties as $property) {
                     $propertyName = $property->getName();
-                    $dto->$propertyName = $args[$propertyName];
+                    if (array_key_exists($propertyName, $args) && ! empty($args[$propertyName])) {
+                        $dto->$propertyName = $args[$propertyName];
+                    } else {
+                        unset($dto->$propertyName);
+                    }
                 }
                 $newParams[$parameter->getName()] = $dto;
             } 
@@ -105,7 +110,7 @@ abstract class Router
                 }
 
                 try {
-                    $args[$parameterName] = self::convert($parameterClass, $args[$parameterName]);
+                    $args[$parameterName] = Helper::convert($parameterClass, $args[$parameterName]);
                 } catch (Exception $e) {
                     return HTTPResponse::error([$e->getMessage()], 400);
                 }
@@ -128,7 +133,7 @@ abstract class Router
         $errors = [];
         $tokenNum = count($tokens);
         for ($i=0; $i < $tokenNum; $i++) { 
-            if (($i + 1) < $tokenNum && $tokens[$i][0] == T_COMMENT && self::string_starts_with($tokens[$i][1], "#Rules[") && $tokens[($i + 1)][0] == T_VARIABLE) {
+            if (($i + 1) < $tokenNum && $tokens[$i][0] == T_COMMENT && Helper::string_starts_with($tokens[$i][1], "#Rules[") && $tokens[($i + 1)][0] == T_VARIABLE) {
 
                 $propertyName = ltrim($tokens[($i + 1)][1], "$");
                 $rules = explode(",", substr($tokens[$i][1], 7, strpos($tokens[$i][1], "]") - 7));
@@ -154,7 +159,7 @@ abstract class Router
                         }
                     }
 
-                    if (self::string_starts_with($rule, "required_when")) {
+                    if (Helper::string_starts_with($rule, "required_when")) {
                         $conditions = substr($rule, 14, strpos($rule, ")") - 14);
                         $attribute = explode("=", $conditions);
 
@@ -169,36 +174,5 @@ abstract class Router
             }
         }
         return $errors;
-    }
-
-    private static function string_starts_with(string $haystack, string $needle): bool
-    {
-        if (!function_exists('str_starts_with')) {
-            return (substr($haystack, 0, strlen($needle)) === $needle);
-        }
-        return str_starts_with($haystack, $needle);
-    }
-
-    private static function convert(string $type, $value)
-    {
-        switch ($type) {
-            case "int":
-                return (int) $value;
-
-            case "float":
-                return (float) $value;
-            
-            case "double":
-                return (double) $value;
-            
-            case "string":
-                return (string) $value;
-
-            case "bool":
-                return (bool) $value;
-            
-            default:
-                return $value;
-        }
     }
 }

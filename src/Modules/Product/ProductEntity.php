@@ -2,23 +2,19 @@
 
 namespace App\Modules\Product;
 
-use App\Database\Entity;
+use App\Setup\Entity;
 
 class ProductEntity extends Entity
 {
-    #@Column()
+    #Column[id]
     public $id;
 
-    #@Column()
-    public $title;
+    #Column[string, unique]
+    public $sku;
+
+    #Column[string]
+    public $name;
   
-    public $body;
-  
-    public $author_id;
-  
-    public $date;
-  
-    public $views;
-  
-    public $finished;
+    #Column[numeric]
+    public $price;
 }

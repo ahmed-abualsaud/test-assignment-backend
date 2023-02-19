@@ -8,6 +8,6 @@ abstract class Routes
     {
         Router::get("/", [\App\Modules\Product\ProductController::class, "list"]);
         Router::post("/add-product", [\App\Modules\Product\ProductController::class, "create"]);
-        Router::delete("/delete-product", [\App\Modules\Product\ProductController::class, "delete"]);
+        Router::delete("/delete-products", [\App\Modules\Product\ProductController::class, "delete"]);
     }
 }
