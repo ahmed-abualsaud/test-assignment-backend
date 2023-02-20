@@ -19,7 +19,7 @@ class Database
         $this->dataSource = DataSource::getSource();
     }
 
-    public static function getRepository($class)
+    public static function getRepository(string $class)
     {
         $metadata = DataSource::parseEntity($class);
         return new Database($metadata["table"], $metadata["columns"]);
@@ -30,14 +30,36 @@ class Database
         try {
             $connection = $this->dataSource->openConnection();
             $columnsString = implode(", ", array_keys($this->columns));
-            $statement = $connection->prepare("SELECT ".$columnsString." FROM ".$this->table);
+            $query = "SELECT ".$columnsString." FROM ".$this->table;
+            $statement = $connection->prepare($query);
             $statement->execute();
             $result = $statement->fetchAll();
             $this->dataSource->closeConnection();
             return $result;
         } catch (PDOException $e) {
-            throw new PDOException("Connection failed: ".$e->getMessage());
+            throw new PDOException("Execute query failed: ".$query." ".$e->getMessage());
         }
+    }
+
+    public function getWhere($where, ...$select)
+    {
+        try {
+            $connection = $this->dataSource->openConnection();
+            $selectColumns = empty($select)? "*": implode(", ", $select);
+            $query = "SELECT ".$selectColumns." FROM ".$this->table." WHERE ".str_replace("=", "='", http_build_query($where,'','\' AND ')."'");
+            $statement = $connection->prepare($query);
+            $statement->execute();
+            $result = $statement->fetchAll();
+            $this->dataSource->closeConnection();
+            return $result;
+        } catch (PDOException $e) {
+            throw new PDOException("Execute query failed: ".$query." ".$e->getMessage());
+        }
+    }
+
+    public function getWhereIn()
+    {
+        
     }
 
     public function create($args)
@@ -49,16 +71,18 @@ class Database
             });
 
             foreach ($columns as $column) {
-                if (! array_key_exists($column, $args)) {
+                if (! array_key_exists($column, $args) && ! in_array("nullable", $this->columns[$column])) {
                     throw new PDOException("'".$column."' is required");
                 }
             }
 
-            $diff = array_values(array_diff(array_keys($args), $columns));
+            $argsKeys = array_keys($args);
+            $diff = array_values(array_diff($argsKeys, $columns));
             if (! empty($diff)) {
                 throw new PDOException("Unknown columns '".$diff[0]."'");
             }
 
+            $columns = $argsKeys;
             $columnsString = implode(", ", $columns);
             $columnsParams = ":".implode(", :", $columns);
             $query = "INSERT INTO ".$this->table." (".$columnsString.") VALUES (".$columnsParams.")";
@@ -82,11 +106,66 @@ class Database
             $result = $statement->fetchAll();
             $connection->commit();
             $this->dataSource->closeConnection();
-            return $result;
+            return $result[0];
 
         } catch (PDOException $e) {
-            //$connection->rollback();
-            throw new PDOException("Connection failed: ".$e->getMessage());
+            throw new PDOException("Execute query failed: ".$query." ".$e->getMessage());
+        }
+    }
+
+    public function insert($arguments)
+    {
+        try {
+            $connection = $this->dataSource->openConnection();
+            $allColumns = array_filter(array_keys($this->columns), function($column) { 
+                return (! in_array("id", $this->columns[$column]));
+            });
+            $results = [];
+            $connection->beginTransaction();
+
+            foreach($arguments as $args) {
+
+                foreach ($allColumns as $column) {
+                    if (! array_key_exists($column, $args) && ! in_array("nullable", $this->columns[$column])) {
+                        throw new PDOException("'".$column."' is required");
+                    }
+                }
+    
+                $argsKeys = array_keys($args);
+                $diff = array_values(array_diff($argsKeys, $allColumns));
+                if (! empty($diff)) {
+                    throw new PDOException("Unknown columns '".$diff[0]."'");
+                }
+
+                $columns = $argsKeys;
+                $columnsString = implode(", ", $columns);
+                $columnsParams = ":".implode(", :", $columns);
+                $query = "INSERT INTO ".$this->table." (".$columnsString.") VALUES (".$columnsParams.")";
+                $statement = $connection->prepare($query);
+
+                foreach ($columns as $column) {
+                    $statement->bindParam(":".$column, $args[$column]);
+                }
+
+                $statement->execute();
+                $result = $connection->lastInsertId();
+
+                $primary = array_filter(array_keys($this->columns), function($column) { 
+                    return in_array("id", $this->columns[$column]);
+                });
+
+                $query = "SELECT * FROM ".$this->table." WHERE ".$primary[0]."=".$result;
+                $statement = $connection->prepare($query);
+                $statement->execute();
+                $results[] = $statement->fetchAll()[0];
+            }
+
+            $connection->commit();
+            $this->dataSource->closeConnection();
+            return $results;
+
+        } catch (PDOException $e) {
+            throw new PDOException("Execute query failed: ".$query." ".$e->getMessage());
         }
     }
 
@@ -100,7 +179,7 @@ class Database
             $this->dataSource->closeConnection();
             return $result;
         } catch (PDOException $e) {
-            throw new PDOException("Connection failed: ".$e->getMessage());
+            throw new PDOException("Execute query failed: ".$query." ".$e->getMessage());
         }
     }
 

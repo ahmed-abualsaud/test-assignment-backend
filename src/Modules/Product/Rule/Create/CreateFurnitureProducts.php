@@ -21,6 +21,33 @@ class CreateFurnitureProducts extends Rule
     public function apply($args)
     {
         $args = (array) $args;
-        return $this->getRepository()->createProduct(Helper::array_only($args, ["sku", "name", "price"]));
+        $repositories = $this->getRepositories();
+        $args["type_id"] = $repositories["product_type"]->getProductTypeID("Furniture");
+
+        $entity = $repositories["product_entity"]->createProduct(Helper::array_only($args, ["sku", "name", "price", "type_id"]));
+        $attributes["height"] = $repositories["product_attribute"]->getProductAttributes(["height", "width", "length"]);
+
+        $repositories["product_eav"]->createProductEAV(
+            [
+                "product_entity_id" => $entity["id"],
+                "product_attribute_id" => $attributes["height"]["id"],
+                "attribute_value" => $args["height"]
+            ],
+            [
+                "product_entity_id" => $entity["id"],
+                "product_attribute_id" => $attributes["width"]["id"],
+                "attribute_value" => $args["width"]
+            ],
+            [
+                "product_entity_id" => $entity["id"],
+                "product_attribute_id" => $attributes["length"]["id"],
+                "attribute_value" => $args["length"]
+            ]
+        );
+
+        $entity["height"] = $args["height"];
+        $entity["width"] = $args["width"];
+        $entity["length"] = $args["length"];
+        return $entity;
     }
 }

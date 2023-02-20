@@ -14,6 +14,6 @@ class ListAllProducts extends Rule
     public function apply($args)
     {
 
-        return $this->getRepository()->getAllProducts();
+        return $this->getRepositories()->getAllProducts();
     }
 }

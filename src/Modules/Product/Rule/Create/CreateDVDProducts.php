@@ -21,6 +21,19 @@ class CreateDVDProducts extends Rule
     public function apply($args)
     {
         $args = (array) $args;
-        return $this->getRepository()->createProduct(Helper::array_only($args, ["sku", "name", "price"]));
+        $repositories = $this->getRepositories();
+        $args["type_id"] = $repositories["product_type"]->getProductTypeID("DVD-disc");
+
+        $entity = $repositories["product_entity"]->createProduct(Helper::array_only($args, ["sku", "name", "price", "type_id"]));
+        $attribute = $repositories["product_attribute"]->getProductAttributes("size");
+
+        $repositories["product_eav"]->createProductEAV([
+            "product_entity_id" => $entity["id"],
+            "product_attribute_id" => $attribute["id"],
+            "attribute_value" => $args["size"]
+        ]);
+
+        $entity["size"] = $args["size"];
+        return $entity;
     }
 }

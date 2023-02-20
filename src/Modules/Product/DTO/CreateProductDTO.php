@@ -6,7 +6,7 @@ use App\Setup\DTO;
 
 class CreateProductDTO extends DTO
 {
-    #Rules[required, string]
+    #Rules[unique(App\Modules\Product\Entity\ProductEntity), required, string]
     public $sku;
 
     #Rules[required, string]

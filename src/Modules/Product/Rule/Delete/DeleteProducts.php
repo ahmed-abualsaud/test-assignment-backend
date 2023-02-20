@@ -17,6 +17,6 @@ class DeleteProducts extends Rule
 
     public function apply($ids)
     {
-        return $this->getRepository()->deleteProducts($ids);
+        return $this->getRepositories()->deleteProducts($ids);
     }
 }

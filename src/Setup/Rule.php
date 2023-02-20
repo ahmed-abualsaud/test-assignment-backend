@@ -4,16 +4,16 @@ namespace App\Setup;
 
 abstract class Rule
 {
-    private $repository;
+    private $repositories;
 
-    public function __construct($repository)
+    public function __construct($repositories)
     {
-        $this->repository = $repository;
+        $this->repositories = $repositories;
     }
 
-    public function getRepository()
+    public function getRepositories()
     {
-        return $this->repository;
+        return $this->repositories;
     }
 
     abstract public function isApplicable($args);

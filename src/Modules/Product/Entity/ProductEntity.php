@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Product;
+namespace App\Modules\Product\Entity;
 
 use App\Setup\Entity;
 
@@ -15,6 +15,9 @@ class ProductEntity extends Entity
     #Column[string]
     public $name;
   
-    #Column[numeric]
+    #Column[float]
     public $price;
+
+    #Column[bigint]
+    public $type_id;
 }

@@ -22,7 +22,7 @@ class RuleEngine
                     if (! is_array($result)) {
                         $results[] = $result;
                     } else {
-                        array_push($results, ...$result);
+                        $results = array_merge($results, $result);
                     }
                 }
             }

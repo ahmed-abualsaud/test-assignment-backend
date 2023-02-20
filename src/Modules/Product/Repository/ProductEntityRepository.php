@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Modules\Product;
+namespace App\Modules\Product\Repository;
 
 use App\Setup\Database;
-class ProductRepository
+use App\Modules\Product\Entity\ProductEntity;
+
+class ProductEntityRepository
 {
     private $repository;
 

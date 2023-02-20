@@ -153,7 +153,7 @@ abstract class Router
                         }
                     }
 
-                    if ($rule == "text") {
+                    if ($rule == "text" || $rule == "string") {
                         if (array_key_exists($propertyName, $args) && ! is_string($args[$propertyName])) {
                             $errors[] = "'".$propertyName."' should have a text value";
                         }
@@ -167,6 +167,15 @@ abstract class Router
                             if (! array_key_exists($propertyName, $args)) {
                                 $errors[] = "'".$propertyName."' is required";
                             }
+                        }
+                    }
+
+                    if (Helper::string_starts_with($rule, "unique")) {
+                        $className = substr($rule, 7, strpos($rule, ")") - 7);
+                        $repository = Database::getRepository($className);
+
+                        if (! empty($repository->getWhere([$propertyName => $args[$propertyName]], "id"))) {
+                            $errors[] = "'".$propertyName."' already exists";
                         }
                     }
 
