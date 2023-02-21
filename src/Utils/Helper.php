@@ -15,6 +15,18 @@ abstract class Helper
         }
         return str_starts_with($haystack, $needle);
     }
+
+    public static function string_contains(string $haystack, string $needle): bool
+    {
+        if (!function_exists('str_contains')) {
+            if (is_string($haystack) && is_string($needle) ) {
+                return '' === $needle || false !== strpos($haystack, $needle);
+            } else {
+                return false;
+            }
+        }
+        return str_contains($haystack, $needle);
+    }
     
     public static function array_only($array, $keys)
     {

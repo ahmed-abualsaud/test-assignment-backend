@@ -17,6 +17,10 @@ class ProductEAVRepository
     public function createProductEAV($args)
     {
         return $this->repository->create($args);
+    }
 
+    public function insertProductEAV($args)
+    {
+        return $this->repository->insert($args);
     }
 }

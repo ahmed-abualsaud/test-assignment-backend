@@ -28,9 +28,9 @@ class Database
     public function all()
     {
         try {
-            $connection = $this->dataSource->openConnection();
             $columnsString = implode(", ", array_keys($this->columns));
             $query = "SELECT ".$columnsString." FROM ".$this->table;
+            $connection = $this->dataSource->openConnection();
             $statement = $connection->prepare($query);
             $statement->execute();
             $result = $statement->fetchAll();
@@ -41,12 +41,12 @@ class Database
         }
     }
 
-    public function getWhere($where, ...$select)
+    public function getWhere($andCriteria, ...$select)
     {
         try {
-            $connection = $this->dataSource->openConnection();
             $selectColumns = empty($select)? "*": implode(", ", $select);
-            $query = "SELECT ".$selectColumns." FROM ".$this->table." WHERE ".str_replace("=", "='", http_build_query($where,'','\' AND ')."'");
+            $query = "SELECT ".$selectColumns." FROM ".$this->table." WHERE ".$this->andWhere($andCriteria);
+            $connection = $this->dataSource->openConnection();
             $statement = $connection->prepare($query);
             $statement->execute();
             $result = $statement->fetchAll();
@@ -57,15 +57,32 @@ class Database
         }
     }
 
-    public function getWhereIn()
+    public function getWhereInnerJoin($joins, $andCriteria, ...$select)
     {
-        
+        try {
+            $selectColumns = empty($select)? "*": implode(", ", $select);
+            $query = "SELECT ".$selectColumns." FROM ".$this->table." ";
+            foreach ($joins as $join) {
+                $query .= "INNER JOIN ".$join[0]." ON ".$this->table.".".$join[2]."=".$join[0].".".$join[1]." ";
+            }
+
+            if (! empty($andCriteria)) {
+                $query .= "WHERE ".$this->andWhere($andCriteria);
+            }
+            $connection = $this->dataSource->openConnection();
+            $statement = $connection->prepare($query);
+            $statement->execute();
+            $result = $statement->fetchAll();
+            $this->dataSource->closeConnection();
+            return $result;
+        } catch (PDOException $e) {
+            throw new PDOException("Execute query failed: ".$query." ".$e->getMessage());
+        }
     }
 
     public function create($args)
     {
         try {
-            $connection = $this->dataSource->openConnection();
             $columns = array_filter(array_keys($this->columns), function($column) { 
                 return (! in_array("id", $this->columns[$column]));
             });
@@ -86,6 +103,7 @@ class Database
             $columnsString = implode(", ", $columns);
             $columnsParams = ":".implode(", :", $columns);
             $query = "INSERT INTO ".$this->table." (".$columnsString.") VALUES (".$columnsParams.")";
+            $connection = $this->dataSource->openConnection();
             $connection->beginTransaction();
             $statement = $connection->prepare($query);
 
@@ -115,16 +133,17 @@ class Database
 
     public function insert($arguments)
     {
+        $query= "";
         try {
-            $connection = $this->dataSource->openConnection();
             $allColumns = array_filter(array_keys($this->columns), function($column) { 
                 return (! in_array("id", $this->columns[$column]));
             });
+
             $results = [];
+            $connection = $this->dataSource->openConnection();
             $connection->beginTransaction();
 
             foreach($arguments as $args) {
-
                 foreach ($allColumns as $column) {
                     if (! array_key_exists($column, $args) && ! in_array("nullable", $this->columns[$column])) {
                         throw new PDOException("'".$column."' is required");
@@ -169,11 +188,11 @@ class Database
         }
     }
 
-    public function delete($ids)
+    public function delete($criteria)
     {
         try {
+            $query = "DELETE FROM ".$this->table." WHERE ".$this->andWhere($criteria);
             $connection = $this->dataSource->openConnection();
-            $query = "DELETE FROM ".$this->table." WHERE id IN(".trim($ids, "[]").")";
             $statement = $connection->prepare($query);
             $result = $statement->execute();
             $this->dataSource->closeConnection();
@@ -181,6 +200,21 @@ class Database
         } catch (PDOException $e) {
             throw new PDOException("Execute query failed: ".$query." ".$e->getMessage());
         }
+    }
+
+    function andWhere($andCriteria)
+    {
+        $anded = "";
+
+        foreach ($andCriteria as $key => $value) {
+            if (gettype($value) === "string" && Helper::string_starts_with($value, "IN(")) {
+
+                $anded .= $key." ".$value." AND ";
+            } else {
+                $anded .= $key."='".$value."' AND ";
+            }
+        }
+        return substr($anded, 0, strlen($anded) - 5);
     }
 
     private function parseType($value, $rules)
@@ -204,3 +238,36 @@ class Database
         }
     }
 }
+
+`
+SET @atts = '(SELECT product_attributes.attribute_name, product_eavs.attribute_value, product_entities.id ,product_entities.sku, product_entities.name, product_entities.price, product_entities.type_id
+FROM product_eavs
+INNER JOIN product_entities ON product_eavs.product_entity_id=product_entities.id
+INNER JOIN product_attributes ON product_eavs.product_attribute_id=product_attributes.id) as atts';
+
+SET @sql = NULL;
+SET @attribs = NULL;
+
+SELECT
+GROUP_CONCAT(DISTINCT CONCAT(
+'MAX(CASE WHEN attribute_name = "', attribute_name, '" THEN "', attribute_value, '" END) ', attribute_name
+))
+INTO @attribs
+FROM (
+SELECT product_attributes.attribute_name, product_eavs.attribute_value
+FROM product_eavs
+INNER JOIN product_entities ON product_eavs.product_entity_id=product_entities.id
+INNER JOIN product_attributes ON product_eavs.product_attribute_id=product_attributes.id
+) AS attribs;
+
+SET @myquery = NULL;
+SET @myquery = CONCAT('SELECT id, sku, name, price, type_id, ', @attribs, 
+' FROM ', @atts, ' GROUP BY id');
+
+SET @sql = CONCAT('SELECT *',
+' FROM (', @myquery, ') as myquery INNER JOIN product_types ON myquery.type_id=product_types.id');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+`;

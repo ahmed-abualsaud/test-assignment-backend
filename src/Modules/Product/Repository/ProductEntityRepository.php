@@ -2,6 +2,7 @@
 
 namespace App\Modules\Product\Repository;
 
+use App\Setup\DBQuery;
 use App\Setup\Database;
 use App\Modules\Product\Entity\ProductEntity;
 
@@ -16,7 +17,16 @@ class ProductEntityRepository
     
     public function getAllProducts()
     {
-        return $this->repository->all();
+        return $this->repository->getWhereInnerJoin(
+            [
+                [
+                    "product_types",
+                    "id",
+                    "type_id"
+                ]
+            ], 
+            []
+        );
     }
 
     public function createProduct($args)
@@ -26,6 +36,8 @@ class ProductEntityRepository
 
     public function deleteProducts($ids)
     {
-        return $this->repository->delete($ids);
+        $ids = preg_split("/[\s,]+/", trim($ids, "[]"));
+
+        return $this->repository->delete(["id" => DBQuery::whereIn($ids)]);
     }
 }
