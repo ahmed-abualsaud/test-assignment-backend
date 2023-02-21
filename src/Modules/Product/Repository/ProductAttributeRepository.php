@@ -15,6 +15,11 @@ class ProductAttributeRepository
         $this->repository = Database::getRepository(ProductAttribute::class);
     }
 
+    public function getAllProductAttributes(...$select)
+    {
+        return $this->repository->all(...$select);
+    }
+
     public function getProductAttributes($attributes)
     {
         if (is_array($attributes)) {

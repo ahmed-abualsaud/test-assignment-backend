@@ -13,6 +13,8 @@ class ListAllProducts extends Rule
 
     public function apply($args)
     {
-        return $this->getRepositories()["product_entity"]->getAllProducts();
+        $repositories = $this->getRepositories();
+        $attributes = $repositories["product_attribute"]->getAllProductAttributes("attribute_name");
+        return $repositories["product_entity"]->getAllProducts($attributes);
     }
 }
