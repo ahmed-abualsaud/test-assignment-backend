@@ -2,6 +2,8 @@
 
 namespace App\Setup;
 
+header("Access-Control-Allow-Origin: *");
+
 use App\Setup\Config;
 use App\Setup\Router;
 use App\Setup\Routes;

@@ -8,7 +8,6 @@ use ReflectionObject;
 use App\Utils\Helper;
 use App\Utils\HTTPRequest;
 use App\Utils\HTTPResponse;
-use App\Exceptions\RouteNotFoundException;
 
 abstract class Router
 {
@@ -64,9 +63,9 @@ abstract class Router
 
                     return self::validateParamsAndCall($container, $class, $method, HTTPRequest::getInputs());
                 }
-                throw new RouteNotFoundException("Method '".$method."' does not exists inside class '".$class."'");
+                throw new Exception("Method '".$method."' does not exists inside class '".$class."'");
             }
-            throw new RouteNotFoundException("Class '".$class."' does not exists");
+            throw new Exception("Class '".$class."' does not exists");
         }
 
         if (is_callable($action)) {
