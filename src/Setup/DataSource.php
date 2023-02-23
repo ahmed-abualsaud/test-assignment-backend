@@ -20,12 +20,12 @@ class DataSource
 
     public function __construct()
     {
-        $this->type = getenv("DATABASE_TYPE");
-        $this->host = getenv("DATABASE_HOST");
-        $this->port = getenv("DATABASE_PORT");
-        $this->name = getenv("DATABASE_NAME");
-        $this->username = getenv("DATABASE_USERNAME");
-        $this->password = getenv("DATABASE_PASSWPRD");
+        $this->type = Config::get("DATABASE_TYPE");
+        $this->host = Config::get("DATABASE_HOST");
+        $this->port = Config::get("DATABASE_PORT");
+        $this->name = Config::get("DATABASE_NAME");
+        $this->username = Config::get("DATABASE_USERNAME");
+        $this->password = Config::get("DATABASE_PASSWPRD");
     }
 
     protected function connect()

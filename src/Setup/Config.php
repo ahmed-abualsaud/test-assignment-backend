@@ -8,6 +8,11 @@ use InvalidArgumentException;
 abstract class Config
 {
 
+    public static function get($key)
+    {
+        return $_ENV[$key];
+    }
+
     public static function load(string $path)
     {
         if(!file_exists($path)) {
@@ -52,7 +57,7 @@ abstract class Config
             }
 
             if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
-                putenv(sprintf('%s=%s', $name, $value));
+                //putenv(sprintf('%s=%s', $name, $value));
                 $_ENV[$name] = $value;
                 $_SERVER[$name] = $value;
             }
