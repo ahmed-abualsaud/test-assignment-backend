@@ -94,7 +94,7 @@ abstract class Router
 
                 foreach($properties as $property) {
                     $propertyName = $property->getName();
-                    if (array_key_exists($propertyName, $args) && ! empty($args[$propertyName])) {
+                    if (array_key_exists($propertyName, $args) && (in_array($args[$propertyName], [0, '0', "0"]) || ! empty($args[$propertyName]))) {
                         $dto->$propertyName = $args[$propertyName];
                     } else {
                         unset($dto->$propertyName);
@@ -141,7 +141,7 @@ abstract class Router
                     $rule = trim($rule);
 
                     if (($rule) == "required") {
-                        if (! array_key_exists($propertyName, $args)) {
+                        if (! array_key_exists($propertyName, $args) || ((! in_array($args[$propertyName], [0, 0.0, '0', "0"])) && empty($args[$propertyName]))) {
                             $errors[] = "'".$propertyName."' is required";
                         }
                     }
@@ -149,6 +149,18 @@ abstract class Router
                     if ($rule == "numeric") {
                         if (array_key_exists($propertyName, $args) && ! is_numeric($args[$propertyName])) {
                             $errors[] = "'".$propertyName."' should have a numeric value";
+                        }
+                    }
+
+                    if ($rule == "positive") {
+                        if (array_key_exists($propertyName, $args) && (! is_numeric($args[$propertyName]) || (is_numeric($args[$propertyName]) && ((double) $args[$propertyName])) < 0)) {
+                            $errors[] = "'".$propertyName."' should have a numeric and positive value";
+                        }
+                    }
+
+                    if ($rule == "notzero") {
+                        if (array_key_exists($propertyName, $args) && in_array($args[$propertyName], [0, "0", '0'])) {
+                            $errors[] = "'".$propertyName."' should not be equal to zero";
                         }
                     }
 
@@ -163,7 +175,7 @@ abstract class Router
                         $attribute = explode("=", $conditions);
 
                         if ($args[$attribute[0]] == $attribute[1]) {
-                            if (! array_key_exists($propertyName, $args)) {
+                            if (! array_key_exists($propertyName, $args) || (! in_array($args[$propertyName], [0, '0', "0"]) && empty($args[$propertyName]))) {
                                 $errors[] = "'".$propertyName."' is required";
                             }
                         }

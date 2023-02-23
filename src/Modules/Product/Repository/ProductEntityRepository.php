@@ -36,6 +36,7 @@ class ProductEntityRepository
             ) AS atts GROUP BY product_id
             ) AS myquery
             INNER JOIN product_types ON myquery.type_id=product_types.id
+            ORDER BY product_id
         ");
 
         foreach ($data as $index => $rows) {
@@ -46,6 +47,10 @@ class ProductEntityRepository
             }
             $data[$index]['id'] = (int) $data[$index]['product_id'];
             unset($data[$index]['product_id']);
+        }
+
+        if (count($data) === 1) {
+            $data = [$data];
         }
 
         return $data;
