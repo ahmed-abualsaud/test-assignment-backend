@@ -11,7 +11,7 @@ class CreateDVDProducts extends Rule
     {
         $args = (array) $args;
 
-        if (! empty($args) && array_key_exists("type", $args) && $args["type"] === "DVD-disc") {
+        if (! empty($args) && array_key_exists("type", $args) && $args["type"] === "DVD") {
             return true;
         }
 
@@ -22,7 +22,7 @@ class CreateDVDProducts extends Rule
     {
         $args = (array) $args;
         $repositories = $this->getRepositories();
-        $args["type_id"] = $repositories["product_type"]->getProductTypeID("DVD-disc");
+        $args["type_id"] = $repositories["product_type"]->getProductTypeID("DVD");
 
         $entity = $repositories["product_entity"]->createProduct(Helper::array_only($args, ["sku", "name", "price", "type_id"]));
         $attribute = $repositories["product_attribute"]->getProductAttributes("size");

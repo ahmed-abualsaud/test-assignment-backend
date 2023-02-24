@@ -18,7 +18,7 @@ class CreateProductDTO extends DTO
     #Rules[required, string]
     public $type;
 
-    #Rules[required_when(type=DVD-disc), positive]
+    #Rules[required_when(type=DVD), positive]
     public $size;
 
     #Rules[required_when(type=Book), positive, notzero]
